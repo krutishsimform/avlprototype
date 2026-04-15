@@ -145,7 +145,22 @@
   </div>
 </header>
 
-<main id="app" class="pt-14 min-h-screen">
+<!-- Prototype scope banner -->
+<div id="protoBanner" class="fixed top-14 inset-x-0 z-40 bg-neon text-ink border-b border-neon-2">
+  <div class="max-w-6xl mx-auto px-6 py-2 flex items-center gap-3 text-[13px]">
+    <span class="font-mono uppercase tracking-widest text-[10px] font-bold bg-ink text-neon px-2 py-0.5 rounded-full">Prototype</span>
+    <span class="font-medium flex-1">
+      Clickable preview of AVL CoPilot — Phase 1.5. Covers 14 user-facing epics &amp; 80 user stories across sign-up, chat, knowledge base, escalation, and account. Toggle
+      <button onclick="toggleTrace()" class="underline font-bold">Story Trace</button>
+      or open the
+      <button onclick="openStoryIndex()" class="underline font-bold">Story Index</button>
+      to map screens back to requirements.
+    </span>
+    <button onclick="document.getElementById('protoBanner').remove(); document.getElementById('app').classList.remove('pt-[88px]'); document.getElementById('app').classList.add('pt-14');" class="text-ink/70 hover:text-ink font-bold text-base leading-none" aria-label="Dismiss">×</button>
+  </div>
+</div>
+
+<main id="app" class="pt-[88px] min-h-screen">
 
   <!-- 1. LANDING -->
   <section class="screen" id="screen-landing">
