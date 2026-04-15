@@ -70,6 +70,8 @@
   input:focus, textarea:focus, select:focus { outline:none; border-color:#d4ff3a; box-shadow:0 0 0 3px rgba(212,255,58,.12); }
   .field-error { border-color:#ff5560 !important; box-shadow:0 0 0 3px rgba(255,85,96,.12) !important; }
   .err-msg { color:#ff7a82; font-size:12px; margin-top:4px; }
+  @keyframes landedPulse { 0%,100%{ box-shadow:0 0 0 0 rgba(212,255,58,.75); } 50%{ box-shadow:0 0 0 12px rgba(212,255,58,0); } }
+  .story-landed { outline:2px solid #d4ff3a !important; outline-offset:4px; border-radius:12px; animation: landedPulse 1.1s ease-in-out 3; scroll-margin:120px; }
 
   .bubble-user { background:#d4ff3a; color:#0a0a0a; }
   .bubble-ai   { background:#161616; color:#f5f5f5; border:1px solid #262626; }
@@ -1011,14 +1013,55 @@ function renderStoryIndex(filter) {
   document.getElementById('storyIndexBody').innerHTML = html;
   document.getElementById('storyCount').textContent = count;
 }
+const SCREEN_NAMES = {
+  landing:'Landing', signup:'Sign up', login:'Log in', forgot:'Forgot password',
+  welcome:'Welcome', chat:'Chat', escalate:'Escalate',
+  knowledge:'Knowledge Base', profile:'Account'
+};
+const STORY_SCREENS = {}; // { "ACP-001": ["chat","knowledge"], ... }
+function buildStoryScreenIndex() {
+  document.querySelectorAll('.screen').forEach(scr => {
+    const sid = scr.id.replace('screen-','');
+    scr.querySelectorAll('[data-story]').forEach(el => {
+      (el.dataset.story||'').split(/[\s,]+/).filter(Boolean).forEach(id => {
+        if (!STORY_SCREENS[id]) STORY_SCREENS[id] = [];
+        if (!STORY_SCREENS[id].includes(sid)) STORY_SCREENS[id].push(sid);
+      });
+    });
+  });
+}
+function jumpToStory(sid, screen) {
+  const screens = STORY_SCREENS[sid];
+  if (!screens || !screens.length) { toast(sid+' — no UI surface in this prototype'); return; }
+  const target = screen && screens.includes(screen) ? screen : screens[0];
+  closeStoryIndex();
+  go(target);
+  setTimeout(() => {
+    const scr = document.getElementById('screen-'+target);
+    const el = scr && (scr.querySelector(`[data-story~="${sid}"]`) || scr.querySelector(`[data-story*="${sid}"]`));
+    if (el) {
+      el.scrollIntoView({ behavior:'smooth', block:'center' });
+      el.classList.add('story-landed');
+      setTimeout(()=>el.classList.remove('story-landed'), 3500);
+    }
+  }, 200);
+}
 function renderStoryCard(s, expanded) {
   const epic = s.epicNum ? `Epic ${s.epicNum}` : '';
+  const screens = STORY_SCREENS[s.id] || [];
+  const jumpBtns = screens.length
+    ? screens.map(sc => `<button onclick="event.stopPropagation(); event.preventDefault(); jumpToStory('${s.id}','${sc}');" class="inline-flex items-center gap-1 bg-neon text-ink text-[11px] font-mono font-bold px-2 py-1 rounded-full hover:bg-neon-2 transition" title="Jump to where this story lives in the prototype">→ ${SCREEN_NAMES[sc]||sc}</button>`).join(' ')
+    : `<span class="text-[11px] font-mono text-text-mute italic">Not surfaced in prototype</span>`;
   return `<details ${expanded?'open':''} class="card">
-    <summary class="p-3 flex items-start gap-3 hover:bg-ink-3 rounded-2xl">
+    <summary class="p-3 flex items-start gap-3 hover:bg-ink-3 rounded-2xl cursor-pointer">
       <span class="shrink-0 bg-neon text-ink text-[10px] font-mono font-black px-2 py-0.5 rounded-full">${s.id}</span>
-      <div class="flex-1">
+      <div class="flex-1 min-w-0">
         <div class="text-sm">${s.story}</div>
         <div class="text-[11px] text-text-mute mt-0.5">${epic}${s.epicTitle? ' · '+s.epicTitle:''}${s.priority? ' · '+s.priority:''}</div>
+        <div class="mt-2 flex flex-wrap gap-1.5 items-center">
+          <span class="text-[10px] font-mono uppercase tracking-widest text-text-mute">Jump to:</span>
+          ${jumpBtns}
+        </div>
       </div>
     </summary>
     <div class="px-3 pb-3">
@@ -1216,6 +1259,7 @@ function toast(msg) {
 renderChatList('');
 renderKB();
 go('landing');
+buildStoryScreenIndex();
 </script>
 </body>
 </html>
